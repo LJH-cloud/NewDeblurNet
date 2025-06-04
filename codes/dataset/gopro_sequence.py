@@ -119,4 +119,4 @@ class Sequence(Dataset):
         }
 
     def __len__(self):
-        return len(self.blurry_data_list)//self.reduce_scale # 4408*257 for train
+        return len(self.blurry_data_list)//self.reduce_scale
