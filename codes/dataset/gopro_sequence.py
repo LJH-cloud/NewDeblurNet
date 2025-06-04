@@ -50,7 +50,7 @@ class Sequence(Dataset):
         self.dataset_root = root_path
         self.length_spike = length_spike
         self.crop_size = crop_size
-        self.blurry_data_list = self._make_datalist() # 002/occ008.320_f2881/0001_002.png, ...
+        self.blurry_data_list = self._make_datalist() 
         self.H = X4K10000FPS_RESOLUTION_DICT[self.seq_path]['H']
         self.W = X4K10000FPS_RESOLUTION_DICT[self.seq_path]['W']
         self.Hs = X4K10000FPS_RESOLUTION_DICT[self.seq_path]['Hs']
@@ -63,12 +63,12 @@ class Sequence(Dataset):
 
         tmp = "train" if self.seq_path=="train" else "test"
         rgb_root = os.path.join(self.dataset_root,"GOPRO_Large",tmp)
-        rgb_subroots = os.listdir(rgb_root) # GOPR0372_07_00,...
+        rgb_subroots = os.listdir(rgb_root) 
         rgb_subroots.remove(".DS_Store")
 
         for rgb_subroot in rgb_subroots:
             fullpath = os.path.join(rgb_root, rgb_subroot, "blur_gamma")
-            rgb_folders = os.listdir(fullpath) # occ008.320_f2881, ...
+            rgb_folders = os.listdir(fullpath) 
             rgb_folders = [os.path.join(fullpath, folder) for folder in rgb_folders]
             data_list.extend(rgb_folders) #.png
 
