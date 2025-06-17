@@ -1,36 +1,66 @@
-# The official implementation code of Enhancing Motion Deblurring in High-Speed Scenes with Spike Streams (NeurIPS 2023).
-> Traditional cameras produce desirable vision results but struggle with motion blur in high-speed scenes due to long exposure windows. Existing frame-based deblurring algorithms face challenges in extracting useful motion cues from severely blurred images. Recently, an emerging bio-inspired vision sensor known as the spike camera has achieved an extremely high frame rate while preserving rich spatial details, owing to its novel sampling mechanism. However, typical binary spike streams are relatively low-resolution, degraded image signals devoid of color information, making them unfriendly to human vision. In this paper, we propose a novel approach that integrates the two modalities from two branches, leveraging spike streams as auxiliary visual cues for guiding deblurring in high-speed motion scenes. We propose the first spike-based motion deblurring model with bidirectional information complementarity. We introduce a content-aware motion magnitude attention module that utilizes learnable mask to extract relevant information from blurry images effectively, and we incorporate a transposed cross-attention fusion module to efficiently combine features from both spike data and blurry RGB images. Furthermore, we build two extensive synthesized datasets for training and validation purposes, encompassing high-temporal-resolution spikes, blurry images, and corresponding sharp images. The experimental results demonstrate that our method effectively recovers clear RGB images from highly blurry scenes and outperforms state-of-the-art deblurring algorithms in multiple settings.
+# NewSpkNet: Replace TFI to TFIP
 
 ## Datasets
 [Spk-GoPro](https://pan.baidu.com/s/13j4NLpyrrEL1VH2wgiaGng?pwd=kxva)    & [Spk-X4K1000FPS](https://pan.baidu.com/s/1XryVqgbrknUU6LGyPHX3Lg?pwd=n3ss)
 
 ## Quick Start
-```
+```bash
 python test_real.py
 ```
 
-## Usage
+## Deblur Usage
+First, you should:
+```bash
+cd codes/
 ```
+### Train from Scratch
+```bash
 python train.py -opt options/train/train_deblur.yml
 
-python -m torch.distributed.launch --nproc_per_node=2 --master_port=12345 train.py -opt options/train/train_deblur.yml --launcher pytorch
+python -m torch.distributed.launch --nproc_per_node=2 --master_port=12345 train.py -opt options/train
+/train_deblur.yml --launcher pytorch
 ```
-
+### Finetune
+```bash
+bash finetune.sh
 ```
+### Valid (Metrics)
+```bash
 python valid.py -opt options/test/test_deblur.yml
 ```
-
-```
+### Test (Visualization)
+```bash
 python test.py -opt options/test/test_deblur.yml
 ```
-
-## Citation
+## TFIP Usage
+First, you should:
+```bash
+cd codes/
 ```
-@article{chen2024enhancing,
-  title={Enhancing Motion Deblurring in High-Speed Scenes with Spike Streams},
-  author={Chen, Shiyan and Zhang, Jiyuan and Zheng, Yajing and Huang, Tiejun and Yu, Zhaofei},
-  journal={Advances in Neural Information Processing Systems},
-  volume={36},
-  year={2024}
-}
+Then, you should replace `dataset/x4k1000fps_sequence.py` to `codes/dataset/x4k1000fps_sequence.py.orig`. 
+And **confirm the codes below are commented**! 
+```python
+tfip_path = blurry_rgb_path.replace("_blurry_{}".format(self.length_spike), "_tfi_{}".format(self.length_spike)).replace(".png", ".pt")
+# ...
+tfi = torch.load(tfip_path)/0.5
+        if tfi.shape != (256, 256):
+            tfi = F.interpolate(
+                tfi.unsqueeze(0).unsqueeze(0),
+                size=(256, 256),
+                mode='bilinear',
+                align_corners=False
+            ).squeeze(0).squeeze(0)
+        tfi = tfi.unsqueeze(0).float()
+```
+### Train
+```bash
+bash multi_gpu_tfi.sh
+```
+### Valid (Metrics)
+```bash
+bash multi_gpu_tfi_test.sh
+```
+### Test (Visualization)
+```bash
+bash save_results.sh
 ```
