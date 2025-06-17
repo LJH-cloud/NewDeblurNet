@@ -134,3 +134,4 @@ tb_logger
 
 codes/exp_*
 codes/*.log
+codes/results/
