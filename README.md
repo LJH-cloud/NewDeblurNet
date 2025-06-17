@@ -38,7 +38,7 @@ First, you should:
 cd codes/
 ```
 Then, you should replace `dataset/x4k1000fps_sequence.py` to `codes/dataset/x4k1000fps_sequence.py.orig`. 
-And **confirm the codes below are commented**! 
+**Particularly, while training, confirm the codes below are commented**! 
 ```python
 tfip_path = blurry_rgb_path.replace("_blurry_{}".format(self.length_spike), "_tfi_{}".format(self.length_spike)).replace(".png", ".pt")
 # ...
