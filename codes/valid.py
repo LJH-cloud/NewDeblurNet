@@ -4,6 +4,7 @@ import argparse
 import random
 import logging
 import numpy as np
+from tqdm import tqdm
 
 import torch
 import torch.distributed as dist
@@ -110,13 +111,13 @@ def main():
     psnr_val_rgbrecon = []
     ssim_val_rgbrecon = []
     idx = 0
-    for val_data in val_loader:
+    for val_data in tqdm(val_loader, desc='Process items:', position=0):
         idx += 1
         model.feed_data(val_data)
         model.test()
 
         visuals = model.get_current_visuals() #仍支持valid时，用大batch_size。
-        for tmp_i in range(len(val_data['img_path'])):
+        for tmp_i in tqdm(range(len(val_data['img_path'])), desc='Process val_data:', position=1):
             single_psnr = batch_utils.batch_PSNR(model.pred[tmp_i].unsqueeze(0).detach().cpu(), model.gt[tmp_i].unsqueeze(0).detach().cpu(), 1.)
             single_psnr_quick_sharp = batch_utils.batch_PSNR(model.quick_sharp[tmp_i].unsqueeze(0).detach().cpu(), model.gt[tmp_i].unsqueeze(0).detach().cpu(), 1.)
             single_psnr_recon = batch_utils.batch_PSNR(model.recon[tmp_i].unsqueeze(0).detach().cpu(), model.gt_gray[tmp_i].unsqueeze(0).detach().cpu(), 1.)

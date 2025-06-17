@@ -1,39 +1,39 @@
 #### general settings
-name: 65_xv4k # experiment params. support debug.
+name: 33_xv4k # experiment params. support debug.
 model: SpikeDeblur
-gpu_ids: [2]
+gpu_ids: [0,1]
 
 #### description
-description: "65_xv4k"
+description: "33_xv4k"
 
 #### datasets
 datasets:
   train:
-    length_spike: 65
+    length_spike: 33
 
   val:
     d_name: X4K1000FPS
-    dataset_root: '/home/data10T/jyzhang/x4k1000fps/'
+    dataset_root: '/gpfsdata/home/lvjiahui/projects/x4k1000fps/'
     reduce_scale: 1
-    length_spike: 65
+    length_spike: 33
 
     n_workers: 8
-    batch_size: 8
+    batch_size: 200
     crop_size: 0
 
   test:
     d_name: X4K1000FPS
-    dataset_root: '/home/data10T/jyzhang/x4k1000fps/'
+    dataset_root: '/gpfsdata/home/lvjiahui/projects/x4k1000fps/'
     reduce_scale: 50
-    length_spike: 65
+    length_spike: 33
 
     n_workers: 8
-    batch_size: 8
+    batch_size: 200
     crop_size: 0
 
 #### path
 path:
-  pretrain_model: "xxx.pth"
+  pretrain_model: "/gpfsdata/home/lvjiahui/projects/SpkDeblurNet/pretrained/xv4k_33_100000_SpikeDeblur.pth"
   strict_load: true
 
 #### training settings

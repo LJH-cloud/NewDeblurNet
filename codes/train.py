@@ -4,6 +4,7 @@ import argparse
 import random
 import logging
 import numpy as np
+from tqdm import tqdm 
 
 import torch
 import torch.distributed as dist
@@ -101,7 +102,7 @@ def main():
     # torch.backends.cudnn.deterministic = True # reproducible
 
     #### create train and val dataloader
-    dataset_ratio = 200  # enlarge the size of each epoch. whatever.
+    dataset_ratio = 1  # enlarge the size of each epoch. whatever.
     for phase, dataset_opt in opt['datasets'].items():
         if phase == 'train':
             train_set = create_dataset(dataset_opt, phase)
@@ -150,7 +151,14 @@ def main():
     for epoch in range(start_epoch, total_epochs + 1):
         if opt['dist']:
             train_sampler.set_epoch(epoch)
-        for _, train_data in enumerate(train_loader):
+        train_bar = tqdm(
+            enumerate(train_loader),
+            total=len(train_loader),
+            ncols=100,
+            desc=f'Epoch {epoch}',
+            disable=(rank > 0)         # 只让 rank0 显示
+        )
+        for _, train_data in train_bar:
             current_step += 1
             if current_step > total_iters:
                 break
@@ -164,6 +172,11 @@ def main():
             #### log
             if current_step % opt['logger']['print_freq'] == 0:
                 logs = model.get_current_log()
+                if rank <= 0:
+                    train_bar.set_postfix(
+                        lr=f'{model.get_current_learning_rate():.2e}',
+                        loss=f'{logs.get("l_all", 0):.4f}'
+                    )
                 message = '<epoch:{:3d}, iter:{:8,d}, lr:{:.3e}> '.format(
                     epoch, current_step, model.get_current_learning_rate())
                 for k, v in logs.items():
@@ -175,12 +188,20 @@ def main():
                 if rank <= 0:
                     logger.info(message)
 
+
             # validation
             if current_step % opt['train']['val_freq'] == 0 and rank <= 0 and current_step>0:
                 psnr_val_rgb = []
                 ssim_val_rgb = []
                 idx = 0
-                for val_data in val_loader:
+                val_bar = tqdm(
+                    val_loader,
+                    total=len(val_loader),
+                    ncols=100,
+                    desc=f'Val {current_step}',
+                    disable=(rank > 0)
+                )
+                for val_data in val_bar:
                     idx += 1
                     model.feed_data(val_data)
                     model.test()
@@ -207,6 +228,7 @@ def main():
                     misc_utils.save_img(recon, save_img_path_recon)
                     # save_img_path_flow = os.path.join(img_dir, '{:s}_{:s}_flow.png'.format(img_name, str(current_step)))
                     # misc_utils.save_img(flow, save_img_path_flow)
+                    val_bar.set_postfix(psnr=f'{single_psnr:.2f}')
 
                     # Save ground truth
                     if not saved_gt:

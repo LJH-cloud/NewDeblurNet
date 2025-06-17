@@ -1,0 +1,81 @@
+#############################
+#  Experiment information   #
+#############################
+name: fusion_TFI_replacement          # 实验名称（experiments/ 下的文件夹名）
+suffix: ~
+gpu_ids: [0,1,2,3]                             # 可选后缀，常留空
+
+#############################
+#   Model settings          #
+#############################
+model:                                # ← 新增 / 修改
+  name: FusionUNet                    # 脚本里用来实例化
+  base: 64                            # UNet 基础通道数
+  use_blur: true                      # true: 输入通道 = [TFI, TFP, BlurGray]；false: 仅用 [TFI, TFP]
+
+#############################
+#   Dataset settings        #
+#############################
+datasets:
+  train:
+    d_name: X4K1000FPS
+    type: Sequence
+    phase: train
+    seq_path: train                  # “train_blurry_XX” / “train_spike_2xds” 等前缀
+    root_path: /gpfsdata/home/lvjiahui/projects/x4k1000fps/      # ★ 改成你的实际路径
+    length_spike: 33                 # 脉冲窗口长度
+    crop_size: 256
+    use_shuffle: true
+    num_worker_per_gpu: 4
+    batch_size_per_gpu: 4            # DataParallel: 总 batch；DDP: 单卡 batch
+    pin_memory: true
+
+  val:
+    d_name: X4K1000FPS
+    type: Sequence
+    phase: val
+    seq_path: val
+    root_path: /gpfsdata/home/lvjiahui/projects/x4k1000fps/      # ★ 改成你的实际路径
+    length_spike: 33
+    crop_size: 512                   # 不裁剪，整图验证（如内存不足可调小）
+    use_shuffle: false
+    num_worker_per_gpu: 4
+    batch_size_per_gpu: 4
+    pin_memory: true
+
+#############################
+#   Training settings       #
+#############################
+train:
+  lr_G: 2.0e-4                       # 初始学习率
+  optim_G: AdamW
+  betas: [0.9, 0.99]
+  weight_decay: 0
+  lr_scheme: CosineAnnealingLR
+  niter: 200                         # 总 epoch
+  warmup_iter: -1                    # 不用 warm-up
+  amp: true                          # 混合精度
+  val_freq: 1                        # 每 epoch 验证一次
+  manual_seed: 123
+
+#############################
+#   Path settings           #
+#############################
+path:
+  root: .
+  pretrained_netG: ~
+  resume_state: ~                    # 若续训，填 ckpt 路径
+  experiments_root: ./experiments/fusion_TFI_replacement
+
+#############################
+#   Logger settings         #
+#############################
+logger:
+  print_freq: 100                    # 训练过程中多少 iter 打一次 log
+  save_checkpoint_freq: 5            # 每 5 epoch 额外存一次快照
+  use_tb_logger: true
+
+#############################
+#   Distributed training    #
+#############################
+dist: true                           # 若用 torchrun/DDP 则 true；DataParallel 可设 false

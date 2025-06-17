@@ -1,0 +1,1 @@
+python valid.py -opt options/test/test_deblur.yml

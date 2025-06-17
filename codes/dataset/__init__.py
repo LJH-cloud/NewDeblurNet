@@ -3,6 +3,7 @@ import logging
 import torch
 import torch.utils.data
 import torchvision.transforms as transforms
+from torch.utils.data.distributed import DistributedSampler
 from pathlib import Path
 
 class MyCompose(object):
@@ -51,6 +52,46 @@ def create_dataloader(dataset, dataset_opt, phase, opt=None, sampler=None):
         num_workers = dataset_opt['n_workers']
         return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers,
                                            pin_memory=True)
+        
+
+def create_ddp_dataloader(dataset, batch_size, n_workers, is_train=True):
+    """
+    为 DDP 多进程多卡训练专门定制的 DataLoader。
+    - dataset     : torch Dataset 对象
+    - batch_size  : 全局 batch_size（会自动按 world_size 拆分）
+    - n_workers   : 每个进程的 num_workers
+    - is_train    : True → 训练，False → 验证/测试
+    """
+    world_size = torch.distributed.get_world_size()
+    rank       = torch.distributed.get_rank()
+
+    if is_train:
+        sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=True)
+        # 每卡实际的 batch
+        per_device_bs = batch_size // world_size
+        loader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=per_device_bs,
+            sampler=sampler,
+            num_workers=n_workers,
+            pin_memory=True,
+            drop_last=True,
+            # prefetch_factor=2  # 预取数据，减少等待时间
+        )
+    else:
+        # 验证/测试不需要 shuffle，但也可以用 sampler 保持对齐
+        sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=False)
+        per_device_bs = batch_size // world_size
+        loader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=per_device_bs,
+            sampler=sampler,
+            num_workers=n_workers,
+            pin_memory=True,
+            drop_last=False
+        )
+
+    return loader
 
 
 def create_dataset(dataset_opt, phase):

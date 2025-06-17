@@ -179,16 +179,7 @@ class Sequence(Dataset):
         sharp_rgb_path = blurry_rgb_path.replace("_blurry_{}".format(self.length_spike), "_sharp_{}".format(self.length_spike))
         sharp_rgb_path = self._modify_filename_from_offest(sharp_rgb_path, offest)
         spike_path = os.path.join(os.path.split(blurry_rgb_path.replace("_blurry_{}".format(self.length_spike), "_spike_2xds"))[0], 'spike.dat')
-        tfip_path = blurry_rgb_path.replace("_blurry_{}".format(self.length_spike), "_tfi_{}".format(self.length_spike)).replace(".png", ".npz")
-        tfip = torch.from_numpy(np.load(tfip_path)['tfip'])/0.5
-        if tfip.shape != (self.Hs, self.Ws):
-            tfip = F.interpolate(
-                tfip.unsqueeze(0).unsqueeze(0),
-                size=(self.Hs, self.Ws),
-                mode='bilinear',
-                align_corners=False
-            ).squeeze(0).squeeze(0).unsqueeze(0).float()
-        
+        tfip_path = blurry_rgb_path.replace("_blurry_{}".format(self.length_spike), "_tfi_{}".format(self.length_spike)).replace(".png", ".pt")
         # spike_path = blurry_rgb_path.replace("_blurry_{}".format(self.length_spike), "_spike_2xds_{}".format(self.length_spike))
         # spike_path = spike_path[:-3]+"dat"
 
@@ -232,30 +223,26 @@ class Sequence(Dataset):
         # # # spike = spike.repeat(3,1,1)
 
         if self.transforms:
-            # [blur_img, sharp_img, sharp_img_gray, blur_img_gray], [spike] = shuffleMixer_transforms.paired_random_crop([blur_img, sharp_img, sharp_img_gray, blur_img_gray],[spike],self.crop_size,2)      
-            # # [blur_img, sharp_img, sharp_img_gray], spike = shuffleMixer_transforms.paired_random_crop([blur_img,sharp_img, sharp_img_gray],spike,self.crop_size,1)      
-            # [blur_img, sharp_img, sharp_img_gray, blur_img_gray, spike] = shuffleMixer_transforms.augment([blur_img, sharp_img, sharp_img_gray, blur_img_gray, spike],hflip=True,rotation=True)
-            
-            [blur_img, sharp_img, sharp_img_gray, blur_img_gray], [spike, tfip] = shuffleMixer_transforms.paired_random_crop([blur_img, sharp_img, sharp_img_gray, blur_img_gray],[spike, tfip],self.crop_size,2)      
-            [blur_img, sharp_img, sharp_img_gray, blur_img_gray, spike, tfip] = shuffleMixer_transforms.augment([blur_img, sharp_img, sharp_img_gray, blur_img_gray, spike, tfip],hflip=True,rotation=True)
+            [blur_img, sharp_img, sharp_img_gray, blur_img_gray], spike = shuffleMixer_transforms.paired_random_crop([blur_img, sharp_img, sharp_img_gray, blur_img_gray],spike,self.crop_size,2)      
+            # [blur_img, sharp_img, sharp_img_gray], spike = shuffleMixer_transforms.paired_random_crop([blur_img,sharp_img, sharp_img_gray],spike,self.crop_size,1)      
+            [blur_img, sharp_img, sharp_img_gray, blur_img_gray, spike] = shuffleMixer_transforms.augment([blur_img, sharp_img, sharp_img_gray, blur_img_gray, spike],hflip=True,rotation=True)
         
         tfi = middleTFI(spike.numpy(), middle=self.length_spike//2)/0.5
         tfi = torch.from_numpy(tfi).unsqueeze(0).float()
         # print(tfi.shape, tfi_path)
         tfp = middleTFP(spike.numpy(), middle=self.length_spike//2)/0.5
         tfp = torch.from_numpy(tfp).unsqueeze(0).float()
-        # tfi = torch.load(tfip_path)/0.5
-        # if tfi.shape != (256, 256):
-        #     tfi = F.interpolate(
-        #         tfi.unsqueeze(0).unsqueeze(0),
-        #         size=(256, 256),
-        #         mode='bilinear',
-        #         align_corners=False
-        #     ).squeeze(0).squeeze(0)
-        # tfi = tfi.unsqueeze(0).float()
+        tfi = torch.load(tfip_path)/0.5
+        if tfi.shape != (256, 256):
+            tfi = F.interpolate(
+                tfi.unsqueeze(0).unsqueeze(0),
+                size=(256, 256),
+                mode='bilinear',
+                align_corners=False
+            ).squeeze(0).squeeze(0)
+        tfi = tfi.unsqueeze(0).float()
         # print(tfi.shape, tfi_path)
         # exit(0)
-        tfi = tfip
 
         # tfi_L = middleTFI(spike.numpy(), middle=10)/0.5
         # tfi_L = torch.from_numpy(tfi_L).unsqueeze(0).unsqueeze(0).float()

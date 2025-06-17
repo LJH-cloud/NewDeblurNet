@@ -131,3 +131,6 @@ dmypy.json
 # My project
 experiment*
 tb_logger
+
+codes/exp_*
+codes/*.log

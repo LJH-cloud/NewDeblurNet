@@ -16,7 +16,7 @@ datasets:
     length_spike: 33
 
     n_workers: 8   # actual n_workers
-    batch_size: 40  # actual bt for both single and multi GPUs
+    batch_size: 44  # actual bt for both single and multi GPUs
     crop_size: 256
 
   val:
@@ -26,44 +26,44 @@ datasets:
     length_spike: 33
 
     n_workers: 8
-    batch_size: 40
+    batch_size: 44
     crop_size: 0
 
 #### path
 # when set resume_state, please set pretrain_model, too
 path:
-  pretrain_model: '/gpfsdata/home/lvjiahui/projects/SpkDeblurNet/pretrained/xv4k_33_100000_SpikeDeblur.pth'
+  pretrain_model: '/gpfsdata/home/lvjiahui/projects/SpkDeblurNet/experiments/250617-140607_RESUME_33_xv4k_finetune/models/3000_SpikeDeblur.pth'
   strict_load: true
-  resume_state: ''
+  resume_state: '/gpfsdata/home/lvjiahui/projects/SpkDeblurNet/experiments/250617-140607_RESUME_33_xv4k_finetune/training_state/3000_SpikeDeblur.state'
 
 #### training settings
 train:
-  lr: !!float 1e-4
+  lr: !!float 1e-5
   # weight_decay: !!float 0
-  weight_decay: !!float 1e-4
+  weight_decay: !!float 1e-5
   # epsilon: !!float 1e-8
   beta1: 0.9
   beta2: 0.999
 
-  niter: 100000
-  warmup_iter: -1
+  niter: 30000
+  warmup_iter: 500
   
   # lr_scheme: MultiStepLR
   lr_scheme: CosineAnnealingLR
   lr_milestones: [10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
   # lr_milestones: [10005, 20005, 30005, 40005, 50005, 60005, 70005, 80005, 90005]
   lr_gamma: 0.5
-  T_max: 100000
+  T_max: 30000
   # eta_min: !!float 1e-7
   eta_min: !!float 1e-6
 
   gradient_clipping:
 
   manual_seed: 1314
-  val_freq: !!float 10000 #iter
+  val_freq: !!float 2000 #iter
 
 
 #### logger
 logger:
   print_freq: 100 #iter
-  save_checkpoint_freq: !!float 10000 #iter
+  save_checkpoint_freq: !!float 1000 #iter
